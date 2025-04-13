@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resizable Matrix with File Selector & Rhomboid</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      margin: 0;
+    }
+
+    .sidebar {
+      width: 200px;
+      background: #f4f4f4;
+      padding: 10px;
+      border-right: 1px solid #ccc;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar h3 {
+      margin-top: 0;
+    }
+
+    .file-option {
+      cursor: pointer;
+      padding: 6px;
+      margin: 4px 0;
+      background-color: #e0e0e0;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .file-option:hover {
+      background-color: #d0d0d0;
+    }
+
+    .main {
+      flex-grow: 1;
+      padding: 20px;
+      position: relative;
+    }
+
+    .controls {
+      margin-bottom: 10px;
+    }
+
+    .controls label {
+      margin-right: 10px;
+    }
+
+    .matrix {
+      display: grid;
+      gap: 5px;
+      margin-bottom: 30px;
+    }
+
+    .cell {
+      width: 80px;
+      height: 80px;
+      background-color: #f0f0f0;
+      border: 1px solid #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-align: center;
+      font-size: 12px;
+      transition: filter 0.2s;
+    }
+
+    .cell.selected {
+      filter: invert(1);
+    }
+
+    #rhomboid {
+      width: 50px;
+      height: 50px;
+      background: #3498db;
+      transform: skew(20deg);
+      position: absolute;
+      top: 350px;
+      left: 150px;
+      cursor: grab;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <h3>Select File</h3>
+    <div id="fileList"></div>
+  </div>
+
+  <div class="main">
+    <h2>Resizable Matrix with File Selection</h2>
+
+    <div class="controls">
+      <label>
+        Rows:
+        <input type="number" id="rowsInput" value="4" min="1" max="10">
+      </label>
+      <label>
+        Columns:
+        <input type="number" id="colsInput" value="4" min="1" max="10">
+      </label>
+      <button onclick="generateMatrix()">Apply</button>
+    </div>
+
+    <div class="matrix" id="matrix"></div>
+
+    <div id="rhomboid"></div>
+  </div>
+
+  <script>
+    const matrixContainer = document.getElementById('matrix');
+    const fileList = document.getElementById('fileList');
+    const rowsInput = document.getElementById('rowsInput');
+    const colsInput = document.getElementById('colsInput');
+
+    let cells = [];
+    let selectedCell = null;
+
+    function selectCell(cell) {
+      if (cell) {
+        cell.classList.add('selected');
+        selectedCell = cell;
+      }
+    }
+
+    function unselectCell(cell) {
+      if (cell) {
+        cell.classList.remove('selected');
+      }
+    }
+
+    function selectNextCell() {
+      let index = parseInt(selectedCell?.dataset.index || 0, 10);
+      if (index < cells.length - 1) {
+        selectCell(cells[index + 1]);
+      } else {
+        selectedCell = null;
+      }
+    }
+
+    function generateMatrix() {
+      const rows = parseInt(rowsInput.value, 10);
+      const cols = parseInt(colsInput.value, 10);
+      const total = rows * cols;
+
+      matrixContainer.innerHTML = '';
+      matrixContainer.style.gridTemplateColumns = `repeat(${cols}, 80px)`;
+      matrixContainer.style.gridTemplateRows = `repeat(${rows}, 80px)`;
+
+      cells = [];
+
+      for (let i = 0; i < total; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.index = i;
+        cell.innerText = '';
+        cell.addEventListener('click', () => {
+          if (selectedCell !== cell) {
+            unselectCell(selectedCell);
+            selectCell(cell);
+          }
+        });
+        matrixContainer.appendChild(cell);
+        cells.push(cell);
+      }
+
+      // Select the first cell by default
+      unselectCell(selectedCell);
+      selectCell(cells[0]);
+    }
+
+    // Initial file list
+    for (let i = 1; i <= 16; i++) {
+      const fileDiv = document.createElement('div');
+      const fileName = `file${i}.wav`;
+      fileDiv.className = 'file-option';
+      fileDiv.innerText = fileName;
+      fileDiv.addEventListener('click', () => {
+        if (selectedCell) {
+          selectedCell.innerText = fileName;
+          unselectCell(selectedCell);
+          selectNextCell();
+        }
+      });
+      fileList.appendChild(fileDiv);
+    }
+
+    // Generate initial matrix
+    generateMatrix();
+
+    // Draggable Rhomboid
+    const rhomboid = document.getElementById('rhomboid');
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    rhomboid.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      offsetX = e.clientX - rhomboid.offsetLeft;
+      offsetY = e.clientY - rhomboid.offsetTop;
+      rhomboid.style.cursor = 'grabbing';
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+      rhomboid.style.cursor = 'grab';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        rhomboid.style.left = (e.clientX - offsetX) + 'px';
+        rhomboid.style.top = (e.clientY - offsetY) + 'px';
+      }
+    });
+  </script>
+
+</body>
+</html>
